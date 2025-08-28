@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"strings"
 
 	"github.com/alfianyulianto/go-room-managament/halpers"
 	"github.com/alfianyulianto/go-room-managament/model/domain"
@@ -19,13 +20,17 @@ func NewRoomCategoryRepositoryImp(db *sql.DB) *RoomCategoryRepositoryImpl {
 
 func (r *RoomCategoryRepositoryImpl) FindAll(ctx context.Context, tx *sql.Tx, filter web.RoomCategoryFilter) []domain.RoomCategory {
 	query := "select id, name, created_at, updated_at from room_categories"
-
 	var args []interface{}
+	var conditions []string
+
 	if filter.Search != nil {
-		query += " where name like ? "
+		conditions = append(conditions, "name like ?")
 		args = append(args, "%"+*filter.Search+"%")
 	}
 
+	if len(conditions) > 0 {
+		query += " where " + strings.Join(conditions, " and ")
+	}
 	rows, err := tx.QueryContext(ctx, query, args...)
 	halpers.IfPanicError(err)
 	defer rows.Close()
@@ -42,8 +47,8 @@ func (r *RoomCategoryRepositoryImpl) FindAll(ctx context.Context, tx *sql.Tx, fi
 	return roomCategories
 }
 
-func (r *RoomCategoryRepositoryImpl) FindById(ctx context.Context, tx *sql.Tx, id int64) (domain.RoomCategory, error) {
-	rows, err := tx.QueryContext(ctx, "select * from room_categories where id = ?", id)
+func (r *RoomCategoryRepositoryImpl) FindById(ctx context.Context, dbOrTx QueryExecutor, id int64) (*domain.RoomCategory, error) {
+	rows, err := dbOrTx.QueryContext(ctx, "select * from room_categories where id = ?", id)
 	halpers.IfPanicError(err)
 	defer rows.Close()
 
@@ -51,9 +56,9 @@ func (r *RoomCategoryRepositoryImpl) FindById(ctx context.Context, tx *sql.Tx, i
 	if rows.Next() {
 		err = rows.Scan(&roomCategory.Id, &roomCategory.Name, &roomCategory.CreatedAt, &roomCategory.UpdatedAt)
 		halpers.IfPanicError(err)
-		return roomCategory, nil
+		return &roomCategory, nil
 	} else {
-		return roomCategory, errors.New("room category not found")
+		return nil, errors.New("room category not found")
 	}
 }
 

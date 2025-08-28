@@ -1,6 +1,11 @@
-select id, name, created_at, updated_at from room_categories;
-
-# alter table users
-# add column level enum('Admin', 'User') default 'User' after phone;
+show tables;
 
 describe users;
+describe room_categories;
+describe rooms;
+describe room_images;
+describe room_reservations;
+
+select * from room_categories;
+select * from rooms;
+select * from room_images;

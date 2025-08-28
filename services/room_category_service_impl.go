@@ -3,7 +3,6 @@ package services
 import (
 	"context"
 	"database/sql"
-	"fmt"
 	"github.com/go-playground/validator/v10"
 
 	"github.com/alfianyulianto/go-room-managament/exception"
@@ -82,7 +81,6 @@ func (r *RoomCategoryServiceImpl) FindById(ctx context.Context, id int64) web.Ro
 
 func (r *RoomCategoryServiceImpl) Create(ctx context.Context, request request.RoomCategoryCreateRequest) web.RoomCategoryResponse {
 	tx, err := r.DB.Begin()
-	fmt.Println(tx)
 	defer halpers.CommitOrRollback(tx)
 
 	err = r.Validate.Struct(request)
@@ -110,10 +108,10 @@ func (r *RoomCategoryServiceImpl) Update(ctx context.Context, request request.Ro
 	halpers.IfPanicError(err)
 
 	//check room category by id
-	roomCategory, err := r.RoomCategoryRepository.FindById(ctx, tx, request.Id)
+	_, err = r.RoomCategoryRepository.FindById(ctx, tx, request.Id)
 	halpers.IfPanicError(err)
 
-	roomCategory = r.RoomCategoryRepository.Update(ctx, tx, domain.RoomCategory{
+	roomCategory := r.RoomCategoryRepository.Update(ctx, tx, domain.RoomCategory{
 		Id:   request.Id,
 		Name: request.Name,
 	})
@@ -131,6 +129,7 @@ func (r *RoomCategoryServiceImpl) Delete(ctx context.Context, id int64) {
 	halpers.IfPanicError(err)
 	defer halpers.CommitOrRollback(tx)
 
+	// check room category by id
 	roomCategory, err := r.RoomCategoryRepository.FindById(ctx, tx, id)
 	halpers.IfPanicError(err)
 

@@ -1,6 +1,7 @@
 package exception
 
 import (
+	"fmt"
 	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v2"
 	"net/http"
@@ -34,9 +35,29 @@ func validatorErrors(ctx *fiber.Ctx, errors validator.ValidationErrors) error {
 
 	var validationErrors []web.ValidationErrorResponse
 	for _, fieldError := range errors {
+		message := fieldError.Error()
+		// Custom error messages per tag
+		switch fieldError.Tag() {
+		case "uniqueUserNameCreate", "uniqueUserEmailCreate", "uniqueRoomNameCreate", "uniqueRoomCodeCreate", "uniqueRoomNameUpdate", "uniqueRoomCodeUpdate":
+			message = fmt.Sprintf("%s has alredy been taken", fieldError.Field())
+		case "existRoomCategory":
+			message = "room category does not exist"
+		case "required":
+			message = fmt.Sprintf("%s is required", fieldError.Field())
+		case "email":
+			message = fmt.Sprintf("%s must be a valid email", fieldError.Field())
+		case "files", "file":
+			message = fmt.Sprintf("%s may not be greater than 5MB", "Image")
+		case "eq=Admin|eq=User":
+			message = fmt.Sprintf("selected %s is invalid", fieldError.Field())
+		case "eq=Baik|eq=Rusak Ringan|eq=Rusak Sedang|eq=Rusak Berat":
+			message = fmt.Sprintf("selected %s is invalid", fieldError.Field())
+
+		}
+
 		validationErrors = append(validationErrors, web.ValidationErrorResponse{
 			Field:   fieldError.Field(),
-			Message: fieldError.Error(),
+			Message: message,
 		})
 	}
 

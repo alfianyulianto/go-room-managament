@@ -12,6 +12,7 @@ import (
 	"github.com/alfianyulianto/go-room-managament/repositories"
 	"github.com/alfianyulianto/go-room-managament/router"
 	"github.com/alfianyulianto/go-room-managament/services"
+	"github.com/alfianyulianto/go-room-managament/storage"
 	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/wire"
@@ -28,9 +29,18 @@ func NewInitializedServer(options ...validator.Option) *fiber.App {
 	roomCategoryRepositoryImpl := repositories.NewRoomCategoryRepositoryImp(db)
 	roomCategoryServiceImpl := services.NewRoomCategoryServiceImpl(roomCategoryRepositoryImpl, db, validate)
 	roomCategoryControllerImpl := controllers.NewRoomCategoryControllerImpl(roomCategoryServiceImpl)
+	roomRepositoryImpl := repositories.NewRoomRepositoryImpl()
+	roomImageRepositoryImpl := repositories.NewRoomImageRepositoryImpl()
+	localFileStorage := storage.NewLocalFileStorage()
+	roomServiceImpl := services.NewRoomServiceImpl(roomRepositoryImpl, roomCategoryRepositoryImpl, roomImageRepositoryImpl, localFileStorage, db, validate)
+	roomControllerImpl := controllers.NewRoomControllerImpl(roomServiceImpl)
+	roomImageServiceImpl := services.NewRoomImageServiceImpl(roomRepositoryImpl, roomImageRepositoryImpl, localFileStorage, db, validate)
+	roomImageControllerImpl := controllers.NewRoomImageControllerImpl(roomImageServiceImpl)
 	routerConfig := router.RouterConfig{
 		UserController:         userControllerImpl,
 		RoomCategoryController: roomCategoryControllerImpl,
+		RoomController:         roomControllerImpl,
+		RoomImageController:    roomImageControllerImpl,
 	}
 	fiberApp := router.NewRouter(routerConfig)
 	return fiberApp
@@ -38,6 +48,12 @@ func NewInitializedServer(options ...validator.Option) *fiber.App {
 
 // injector.go:
 
+var userSet = wire.NewSet(repositories.NewUserRepositoryImpl, wire.Bind(new(repositories.UserRepository), new(*repositories.UserRepositoryImpl)), services.NewUserServiceImpl, wire.Bind(new(services.UserService), new(*services.UserServiceImpl)), controllers.NewUserControllerImpl, wire.Bind(new(controllers.UserController), new(*controllers.UserControllerImpl)))
+
 var roomCategorySet = wire.NewSet(repositories.NewRoomCategoryRepositoryImp, wire.Bind(new(repositories.RoomCategoryRepository), new(*repositories.RoomCategoryRepositoryImpl)), services.NewRoomCategoryServiceImpl, wire.Bind(new(services.RoomCategoryService), new(*services.RoomCategoryServiceImpl)), controllers.NewRoomCategoryControllerImpl, wire.Bind(new(controllers.RoomCategoryController), new(*controllers.RoomCategoryControllerImpl)))
 
-var userSet = wire.NewSet(repositories.NewUserRepositoryImpl, wire.Bind(new(repositories.UserRepository), new(*repositories.UserRepositoryImpl)), services.NewUserServiceImpl, wire.Bind(new(services.UserService), new(*services.UserServiceImpl)), controllers.NewUserControllerImpl, wire.Bind(new(controllers.UserController), new(*controllers.UserControllerImpl)))
+var roomSet = wire.NewSet(repositories.NewRoomRepositoryImpl, wire.Bind(new(repositories.RoomRepository), new(*repositories.RoomRepositoryImpl)), services.NewRoomServiceImpl, wire.Bind(new(services.RoomService), new(*services.RoomServiceImpl)), controllers.NewRoomControllerImpl, wire.Bind(new(controllers.RoomController), new(*controllers.RoomControllerImpl)))
+
+var roomImageSet = wire.NewSet(repositories.NewRoomImageRepositoryImpl, wire.Bind(new(repositories.RoomImageRepository), new(*repositories.RoomImageRepositoryImpl)), services.NewRoomImageServiceImpl, wire.Bind(new(services.RoomImageService), new(*services.RoomImageServiceImpl)), controllers.NewRoomImageControllerImpl, wire.Bind(new(controllers.RoomImageController), new(*controllers.RoomImageControllerImpl)))
+
+var fileStorageSet = wire.NewSet(storage.NewLocalFileStorage, wire.Bind(new(storage.FileStorage), new(*storage.LocalFileStorage)))

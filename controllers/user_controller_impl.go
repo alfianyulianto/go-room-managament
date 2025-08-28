@@ -26,6 +26,10 @@ func (u UserControllerImpl) FindAll(ctx *fiber.Ctx) error {
 		filter.Search = &search
 	}
 
+	if level := ctx.Query("level"); level != "" {
+		filter.Level = &level
+	}
+
 	users := u.UserService.FindAll(ctx.Context(), filter)
 
 	if users == nil {

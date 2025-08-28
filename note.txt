@@ -21,3 +21,6 @@ go get github.com/gofiber/fiber/v2
 ** Golang Wire **
 go get github.com/google/wire
 
+** Viper *
+go get github.com/spf13/viper
+

@@ -15,8 +15,8 @@ type QueryExecutor interface {
 
 type RoomCategoryRepository interface {
 	FindAll(ctx context.Context, tx *sql.Tx, filter web.RoomCategoryFilter) []domain.RoomCategory
-	FindById(ctx context.Context, tx *sql.Tx, id int64) (domain.RoomCategory, error)
-	FindByName(ctx context.Context, exec QueryExecutor, name string) (*domain.RoomCategory, error)
+	FindById(ctx context.Context, dbOrTx QueryExecutor, id int64) (*domain.RoomCategory, error)
+	FindByName(ctx context.Context, dbOrTx QueryExecutor, name string) (*domain.RoomCategory, error)
 	Save(ctx context.Context, tx *sql.Tx, roomCategory domain.RoomCategory) domain.RoomCategory
 	Update(ctx context.Context, tx *sql.Tx, roomCategory domain.RoomCategory) domain.RoomCategory
 	Delete(ctx context.Context, tx *sql.Tx, id int64)

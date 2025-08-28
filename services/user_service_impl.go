@@ -3,7 +3,6 @@ package services
 import (
 	"context"
 	"database/sql"
-	"fmt"
 	"github.com/go-playground/validator/v10"
 
 	"github.com/alfianyulianto/go-room-managament/exception"
@@ -121,8 +120,6 @@ func (u UserServiceImpl) Create(ctx context.Context, request request.UserCreateR
 	err = u.Validate.Struct(request)
 	halpers.IfPanicError(err)
 
-	fmt.Println(request)
-
 	user := u.UserRepository.Save(ctx, tx, domain.User{
 		Name:  request.Name,
 		Email: request.Email,
@@ -147,10 +144,11 @@ func (u UserServiceImpl) Update(ctx context.Context, request request.UserUpdateR
 	err = u.Validate.Struct(request)
 	halpers.IfPanicError(err)
 
-	user, err := u.UserRepository.FindById(ctx, tx, request.Id)
+	// check user by id
+	_, err = u.UserRepository.FindById(ctx, tx, request.Id)
 	halpers.IfPanicError(err)
 
-	user = u.UserRepository.Update(ctx, tx, domain.User{
+	user := u.UserRepository.Update(ctx, tx, domain.User{
 		Id:    request.Id,
 		Name:  request.Name,
 		Email: request.Email,
@@ -173,6 +171,7 @@ func (u UserServiceImpl) Delete(ctx context.Context, id int64) {
 	halpers.IfPanicError(err)
 	defer halpers.CommitOrRollback(tx)
 
+	//check user by id
 	_, err = u.UserRepository.FindById(ctx, tx, id)
 	halpers.IfPanicError(err)
 

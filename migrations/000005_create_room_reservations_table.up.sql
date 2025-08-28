@@ -10,7 +10,7 @@ create table room_reservations(
     created_at timestamp not null default current_timestamp,
     updated_at timestamp not null default current_timestamp on update current_timestamp,
     primary key (id),
-    foreign key (room_id) references rooms(id),
-    foreign key (user_id) references users(id),
-    foreign key (approve_id) references users(id)
+    foreign key (room_id) references rooms(id) on update cascade on delete cascade,
+    foreign key (user_id) references users(id) on update cascade on delete cascade,
+    foreign key (approve_id) references users(id) on update cascade on delete cascade
 )engine = InnoDB;

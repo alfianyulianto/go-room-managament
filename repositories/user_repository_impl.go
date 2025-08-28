@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"strings"
 
 	"github.com/alfianyulianto/go-room-managament/halpers"
 	"github.com/alfianyulianto/go-room-managament/model/domain"
@@ -18,7 +19,24 @@ func NewUserRepositoryImpl() *UserRepositoryImpl {
 }
 
 func (u UserRepositoryImpl) FindAll(ctx context.Context, tx *sql.Tx, filter web.UserFilter) []domain.User {
-	rows, err := tx.QueryContext(ctx, "select * from users")
+	query := "select * from users"
+	var args []interface{}
+	var conditions []string
+
+	if filter.Search != nil {
+		conditions = append(conditions, "(name like ?)")
+		args = append(args, "%"+*filter.Search+"%")
+	}
+	if filter.Level != nil {
+		conditions = append(conditions, "level like ?")
+		args = append(args, "%"+*filter.Level+"%")
+	}
+
+	if len(conditions) > 0 {
+		query += " where " + strings.Join(conditions, " and ")
+	}
+
+	rows, err := tx.QueryContext(ctx, query, args...)
 	halpers.IfPanicError(err)
 	defer rows.Close()
 
