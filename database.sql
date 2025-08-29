@@ -9,3 +9,5 @@ describe room_reservations;
 select * from room_categories;
 select * from rooms;
 select * from room_images;
+select * from room_reservations;
+

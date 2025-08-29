@@ -108,17 +108,17 @@ func (r RoomImageServiceImpl) Create(ctx context.Context, request request.RoomIm
 	err = r.Validate.Struct(request)
 	halpers.IfPanicError(err)
 
-	pathSaved, err := r.FileStorage.SaveFile(request.Image, "room_images")
+	filePath, err := r.FileStorage.SaveFile(request.Image, "room_images")
 	halpers.IfPanicError(err)
 
 	roomImage := r.RoomImageRepository.Save(ctx, tx, domain.RoomImage{
 		RoomId: request.RoomId,
-		Path:   pathSaved,
+		Path:   filePath,
 	})
 	return web.RoomImageResponse{
 		Id:        roomImage.Id,
 		RoomId:    roomImage.RoomId,
-		Path:      path.Join(config.Cfg.BaseUrl, pathSaved),
+		Path:      path.Join(config.Cfg.BaseUrl, filePath),
 		CreatedAt: roomImage.CreatedAt,
 		UpdatedAt: roomImage.UpdatedAt,
 	}

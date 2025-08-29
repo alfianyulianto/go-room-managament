@@ -180,17 +180,17 @@ func (r RoomServiceImpl) Create(ctx context.Context, request request.RoomCreateR
 
 	var roomImages []web.RoomImageResponse
 	for _, image := range request.Images {
-		pathSaved, err := r.FileStorage.SaveFile(image, "/room_images")
+		filePath, err := r.FileStorage.SaveFile(image, "/room_images")
 		halpers.IfPanicError(err)
 		roomImage := r.RoomImageRepository.Save(ctx, tx, domain.RoomImage{
 			RoomId: room.Id,
-			Path:   pathSaved,
+			Path:   filePath,
 		})
 
 		roomImages = append(roomImages, web.RoomImageResponse{
 			Id:        roomImage.Id,
 			RoomId:    roomImage.RoomId,
-			Path:      path.Join(config.Cfg.BaseUrl, pathSaved),
+			Path:      path.Join(config.Cfg.BaseUrl, filePath),
 			CreatedAt: roomImage.CreatedAt,
 			UpdatedAt: roomImage.UpdatedAt,
 		})
@@ -230,8 +230,6 @@ func (r RoomServiceImpl) Update(ctx context.Context, request request.RoomUpdateR
 		Condition:      request.Condition,
 		Note:           request.Note,
 	})
-
-	fmt.Println(room.RoomCategoryName)
 
 	return web.RoomResponse{
 		Id:               room.Id,

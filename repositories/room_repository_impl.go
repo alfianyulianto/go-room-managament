@@ -58,8 +58,8 @@ func (r RoomRepositoryImpl) FindAll(ctx context.Context, tx *sql.Tx, filter web.
 	return rooms
 }
 
-func (r RoomRepositoryImpl) FindById(ctx context.Context, tx *sql.Tx, id int64) (domain.Room, error) {
-	rows, err := tx.QueryContext(ctx, "select rooms.id, rooms.room_category_id, room_categories.name, rooms.code, rooms.name, rooms.condition, rooms.note, rooms.created_at, rooms.updated_at from rooms join room_categories on room_categories.id = rooms.room_category_id where rooms.id = ?", id)
+func (r RoomRepositoryImpl) FindById(ctx context.Context, dbOrTx QueryExecutor, id int64) (*domain.Room, error) {
+	rows, err := dbOrTx.QueryContext(ctx, "select rooms.id, rooms.room_category_id, room_categories.name, rooms.code, rooms.name, rooms.condition, rooms.note, rooms.created_at, rooms.updated_at from rooms join room_categories on room_categories.id = rooms.room_category_id where rooms.id = ?", id)
 	halpers.IfPanicError(err)
 	defer rows.Close()
 
@@ -67,9 +67,9 @@ func (r RoomRepositoryImpl) FindById(ctx context.Context, tx *sql.Tx, id int64) 
 	if rows.Next() {
 		err = rows.Scan(&room.Id, &room.RoomCategoryId, &room.RoomCategoryName, &room.Code, &room.Name, &room.Condition, &room.Note, &room.CreatedAt, &room.UpdatedAt)
 		halpers.IfPanicError(err)
-		return room, nil
+		return &room, nil
 	} else {
-		return room, errors.New("room not found")
+		return nil, errors.New("room not found")
 	}
 }
 

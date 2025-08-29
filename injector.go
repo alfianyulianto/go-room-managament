@@ -65,6 +65,17 @@ var fileStorageSet = wire.NewSet(
 	wire.Bind(new(storage.FileStorage), new(*storage.LocalFileStorage)),
 )
 
+var roomReservationSet = wire.NewSet(
+	repositories.NewRoomReservationRepositoryImpl,
+	wire.Bind(new(repositories.RoomReservationRepository), new(*repositories.RoomReservationRepositoryImpl)),
+
+	services.NewRoomReservationServiceImpl,
+	wire.Bind(new(services.RoomReservationService), new(*services.RoomReservationServiceImpl)),
+
+	controllers.NewRoomReservationControllerImpl,
+	wire.Bind(new(controllers.RoomReservationController), new(*controllers.RoomReservationControllerImpl)),
+)
+
 func NewInitializedServer(options ...validator.Option) *fiber.App {
 	wire.Build(
 		app.NewDB,
@@ -74,6 +85,7 @@ func NewInitializedServer(options ...validator.Option) *fiber.App {
 		roomSet,
 		roomImageSet,
 		fileStorageSet,
+		roomReservationSet,
 		wire.Struct(new(router.RouterConfig), "*"),
 		router.NewRouter,
 	)

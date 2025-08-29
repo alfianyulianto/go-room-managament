@@ -36,11 +36,15 @@ func NewInitializedServer(options ...validator.Option) *fiber.App {
 	roomControllerImpl := controllers.NewRoomControllerImpl(roomServiceImpl)
 	roomImageServiceImpl := services.NewRoomImageServiceImpl(roomRepositoryImpl, roomImageRepositoryImpl, localFileStorage, db, validate)
 	roomImageControllerImpl := controllers.NewRoomImageControllerImpl(roomImageServiceImpl)
+	roomReservationRepositoryImpl := repositories.NewRoomReservationRepositoryImpl()
+	roomReservationServiceImpl := services.NewRoomReservationServiceImpl(roomReservationRepositoryImpl, userRepositoryImpl, roomRepositoryImpl, db, validate, localFileStorage)
+	roomReservationControllerImpl := controllers.NewRoomReservationControllerImpl(roomReservationServiceImpl)
 	routerConfig := router.RouterConfig{
-		UserController:         userControllerImpl,
-		RoomCategoryController: roomCategoryControllerImpl,
-		RoomController:         roomControllerImpl,
-		RoomImageController:    roomImageControllerImpl,
+		UserController:            userControllerImpl,
+		RoomCategoryController:    roomCategoryControllerImpl,
+		RoomController:            roomControllerImpl,
+		RoomImageController:       roomImageControllerImpl,
+		RoomReservationController: roomReservationControllerImpl,
 	}
 	fiberApp := router.NewRouter(routerConfig)
 	return fiberApp
@@ -57,3 +61,5 @@ var roomSet = wire.NewSet(repositories.NewRoomRepositoryImpl, wire.Bind(new(repo
 var roomImageSet = wire.NewSet(repositories.NewRoomImageRepositoryImpl, wire.Bind(new(repositories.RoomImageRepository), new(*repositories.RoomImageRepositoryImpl)), services.NewRoomImageServiceImpl, wire.Bind(new(services.RoomImageService), new(*services.RoomImageServiceImpl)), controllers.NewRoomImageControllerImpl, wire.Bind(new(controllers.RoomImageController), new(*controllers.RoomImageControllerImpl)))
 
 var fileStorageSet = wire.NewSet(storage.NewLocalFileStorage, wire.Bind(new(storage.FileStorage), new(*storage.LocalFileStorage)))
+
+var roomReservationSet = wire.NewSet(repositories.NewRoomReservationRepositoryImpl, wire.Bind(new(repositories.RoomReservationRepository), new(*repositories.RoomReservationRepositoryImpl)), services.NewRoomReservationServiceImpl, wire.Bind(new(services.RoomReservationService), new(*services.RoomReservationServiceImpl)), controllers.NewRoomReservationControllerImpl, wire.Bind(new(controllers.RoomReservationController), new(*controllers.RoomReservationControllerImpl)))

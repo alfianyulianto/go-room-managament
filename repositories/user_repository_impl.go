@@ -51,8 +51,8 @@ func (u UserRepositoryImpl) FindAll(ctx context.Context, tx *sql.Tx, filter web.
 	return users
 }
 
-func (u UserRepositoryImpl) FindById(ctx context.Context, tx *sql.Tx, id int64) (domain.User, error) {
-	rows, err := tx.QueryContext(ctx, "select * from users where id= ?", id)
+func (u UserRepositoryImpl) FindById(ctx context.Context, dbOrTx QueryExecutor, id int64) (*domain.User, error) {
+	rows, err := dbOrTx.QueryContext(ctx, "select * from users where id= ?", id)
 	halpers.IfPanicError(err)
 	defer rows.Close()
 
@@ -60,9 +60,9 @@ func (u UserRepositoryImpl) FindById(ctx context.Context, tx *sql.Tx, id int64) 
 	if rows.Next() {
 		err = rows.Scan(&user.Id, &user.Name, &user.Email, &user.Phone, &user.Level, &user.CreatedAt, &user.UpdatedAt)
 		halpers.IfPanicError(err)
-		return user, nil
+		return &user, nil
 	} else {
-		return user, errors.New("user not found")
+		return nil, errors.New("user not found")
 	}
 }
 
