@@ -19,9 +19,10 @@ func NewTokenUtil() *TokenUtil {
 }
 
 func (t TokenUtil) CreateToken(auth domain.Auth) (string, error) {
+	expire := time.Now().Add(time.Hour * 24).UnixMilli()
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 		"id":     auth.Id,
-		"expire": time.Now().Add(time.Hour * 24).UnixMilli(),
+		"expire": expire,
 	})
 
 	jwtToken, err := token.SignedString([]byte(t.SecretKey))

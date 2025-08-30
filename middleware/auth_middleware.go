@@ -1,9 +1,9 @@
 package middleware
 
 import (
-	"fmt"
 	"github.com/gofiber/fiber/v2"
 	"net/http"
+	"strings"
 
 	"github.com/alfianyulianto/go-room-managament/model/domain"
 	"github.com/alfianyulianto/go-room-managament/model/web"
@@ -13,9 +13,8 @@ import (
 func NewAuth(tokenUtil *util.TokenUtil) fiber.Handler {
 	return func(ctx *fiber.Ctx) error {
 		tokenRequest := ctx.Get("Authorization")
-		fmt.Println(tokenRequest)
 
-		if tokenRequest == "" {
+		if !strings.HasPrefix(tokenRequest, "Bearer ") {
 			webResponse := web.WebResponse{
 				Code:   http.StatusUnauthorized,
 				Status: http.StatusText(http.StatusUnauthorized),
@@ -24,11 +23,7 @@ func NewAuth(tokenUtil *util.TokenUtil) fiber.Handler {
 			return ctx.JSON(webResponse)
 		}
 
-		if len(tokenRequest) > 7 && tokenRequest[:7] == "Bearer " {
-			tokenRequest = tokenRequest[7:]
-		}
-
-		auth, err := tokenUtil.ParseToken(tokenRequest)
+		auth, err := tokenUtil.ParseToken(strings.TrimPrefix(tokenRequest, "Bearer "))
 		if err != nil {
 			webResponse := web.WebResponse{
 				Code:   http.StatusUnauthorized,
