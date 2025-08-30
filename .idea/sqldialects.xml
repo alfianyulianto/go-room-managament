@@ -2,7 +2,7 @@
 <project version="4">
   <component name="SqlDialectMappings">
     <file url="file://$PROJECT_DIR$/database.sql" dialect="MySQL" />
-    <file url="file://$PROJECT_DIR$/migrations/000002_create_room_categoris_table.down.sql" dialect="MySQL" />
-    <file url="file://$PROJECT_DIR$/migrations/000002_create_room_categoris_table.up.sql" dialect="MySQL" />
+    <file url="file://$PROJECT_DIR$/database/migrations/000002_create_room_categoris_table.down.sql" dialect="MySQL" />
+    <file url="file://$PROJECT_DIR$/database/migrations/000002_create_room_categoris_table.up.sql" dialect="MySQL" />
   </component>
 </project>

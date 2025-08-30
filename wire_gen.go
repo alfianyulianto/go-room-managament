@@ -13,6 +13,7 @@ import (
 	"github.com/alfianyulianto/go-room-managament/router"
 	"github.com/alfianyulianto/go-room-managament/services"
 	"github.com/alfianyulianto/go-room-managament/storage"
+	"github.com/alfianyulianto/go-room-managament/util"
 	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/wire"
@@ -24,6 +25,9 @@ func NewInitializedServer(options ...validator.Option) *fiber.App {
 	userRepositoryImpl := repositories.NewUserRepositoryImpl()
 	db := app.NewDB()
 	validate := validator.New(options...)
+	tokenUtil := util.NewTokenUtil()
+	authServiceImpl := services.NewAuthServiceImpl(userRepositoryImpl, db, validate, tokenUtil)
+	authControllerImpl := controllers.NewAuthControllerImpl(authServiceImpl)
 	userServiceImpl := services.NewUserServiceImpl(userRepositoryImpl, db, validate)
 	userControllerImpl := controllers.NewUserControllerImpl(userServiceImpl)
 	roomCategoryRepositoryImpl := repositories.NewRoomCategoryRepositoryImp(db)
@@ -40,6 +44,7 @@ func NewInitializedServer(options ...validator.Option) *fiber.App {
 	roomReservationServiceImpl := services.NewRoomReservationServiceImpl(roomReservationRepositoryImpl, userRepositoryImpl, roomRepositoryImpl, db, validate, localFileStorage)
 	roomReservationControllerImpl := controllers.NewRoomReservationControllerImpl(roomReservationServiceImpl)
 	routerConfig := router.RouterConfig{
+		AuthController:            authControllerImpl,
 		UserController:            userControllerImpl,
 		RoomCategoryController:    roomCategoryControllerImpl,
 		RoomController:            roomControllerImpl,
@@ -51,6 +56,8 @@ func NewInitializedServer(options ...validator.Option) *fiber.App {
 }
 
 // injector.go:
+
+var authSet = wire.NewSet(controllers.NewAuthControllerImpl, wire.Bind(new(controllers.AuthController), new(*controllers.AuthControllerImpl)), services.NewAuthServiceImpl, wire.Bind(new(services.AuthService), new(*services.AuthServiceImpl)))
 
 var userSet = wire.NewSet(repositories.NewUserRepositoryImpl, wire.Bind(new(repositories.UserRepository), new(*repositories.UserRepositoryImpl)), services.NewUserServiceImpl, wire.Bind(new(services.UserService), new(*services.UserServiceImpl)), controllers.NewUserControllerImpl, wire.Bind(new(controllers.UserController), new(*controllers.UserControllerImpl)))
 

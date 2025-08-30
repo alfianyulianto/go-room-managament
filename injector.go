@@ -14,6 +14,15 @@ import (
 	"github.com/alfianyulianto/go-room-managament/router"
 	"github.com/alfianyulianto/go-room-managament/services"
 	"github.com/alfianyulianto/go-room-managament/storage"
+	"github.com/alfianyulianto/go-room-managament/util"
+)
+
+var authSet = wire.NewSet(
+	controllers.NewAuthControllerImpl,
+	wire.Bind(new(controllers.AuthController), new(*controllers.AuthControllerImpl)),
+
+	services.NewAuthServiceImpl,
+	wire.Bind(new(services.AuthService), new(*services.AuthServiceImpl)),
 )
 
 var userSet = wire.NewSet(
@@ -80,6 +89,8 @@ func NewInitializedServer(options ...validator.Option) *fiber.App {
 	wire.Build(
 		app.NewDB,
 		validator.New,
+		authSet,
+		util.NewTokenUtil,
 		userSet,
 		roomCategorySet,
 		roomSet,

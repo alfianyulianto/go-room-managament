@@ -64,6 +64,8 @@ func validatorErrors(ctx *fiber.Ctx, errors validator.ValidationErrors) error {
 			message = fmt.Sprintf("%s must be a date after %s", fieldError.Field(), fieldError.Param())
 		case "overlap":
 			message = fmt.Sprintf("%s overlaps with other data", fieldError.Field())
+		case "eqfield":
+			message = fmt.Sprintf("%s confirmation does not match", fieldError.Field())
 
 		}
 

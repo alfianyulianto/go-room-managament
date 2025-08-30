@@ -120,3 +120,23 @@ func (r RoomReservationRepositoryImpl) Delete(ctx context.Context, tx *sql.Tx, i
 	_, err := tx.ExecContext(ctx, "delete from room_reservations where id=?", id)
 	halpers.IfPanicError(err)
 }
+
+func (r RoomReservationRepositoryImpl) Accepted(ctx context.Context, tx *sql.Tx, roomReservation domain.RoomReservation) domain.RoomReservation {
+	_, err := tx.ExecContext(ctx, "update room_reservations set status='Diterima', approve_id=? where id=?", roomReservation.ApproveId, roomReservation.Id)
+	halpers.IfPanicError(err)
+
+	//	get by id
+	roomReservation, err = r.FindById(ctx, tx, roomReservation.Id)
+	halpers.IfPanicError(err)
+	return roomReservation
+}
+
+func (r RoomReservationRepositoryImpl) Rejected(ctx context.Context, tx *sql.Tx, roomReservation domain.RoomReservation) domain.RoomReservation {
+	_, err := tx.ExecContext(ctx, "update room_reservations set status='Ditolak', approve_id=? where id=?", roomReservation.ApproveId, roomReservation.Id)
+	halpers.IfPanicError(err)
+
+	//	get by id
+	roomReservation, err = r.FindById(ctx, tx, roomReservation.Id)
+	halpers.IfPanicError(err)
+	return roomReservation
+}

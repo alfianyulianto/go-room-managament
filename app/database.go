@@ -2,14 +2,23 @@ package app
 
 import (
 	"database/sql"
+	"fmt"
 	_ "github.com/go-sql-driver/mysql"
 	"time"
 
+	"github.com/alfianyulianto/go-room-managament/config"
 	"github.com/alfianyulianto/go-room-managament/halpers"
 )
 
 func NewDB() *sql.DB {
-	db, err := sql.Open("mysql", "root:@tcp(localhost:3306)/go_room_management?multiStatements=true&parseTime=true")
+	dsn := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?multiStatements=true&parseTime=true",
+		config.Cfg.DatabaseUser,
+		config.Cfg.DatabasePass,
+		config.Cfg.DatabaseHost,
+		config.Cfg.DatabasePort,
+		config.Cfg.DatabaseName,
+	)
+	db, err := sql.Open("mysql", dsn)
 	halpers.IfPanicError(err)
 
 	//set database pooling

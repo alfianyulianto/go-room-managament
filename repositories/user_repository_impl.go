@@ -19,7 +19,7 @@ func NewUserRepositoryImpl() *UserRepositoryImpl {
 }
 
 func (u UserRepositoryImpl) FindAll(ctx context.Context, tx *sql.Tx, filter web.UserFilter) []domain.User {
-	query := "select * from users"
+	query := "select id, name, email, phone, level, created_at, updated_at from users"
 	var args []interface{}
 	var conditions []string
 
@@ -52,7 +52,7 @@ func (u UserRepositoryImpl) FindAll(ctx context.Context, tx *sql.Tx, filter web.
 }
 
 func (u UserRepositoryImpl) FindById(ctx context.Context, dbOrTx QueryExecutor, id int64) (*domain.User, error) {
-	rows, err := dbOrTx.QueryContext(ctx, "select * from users where id= ?", id)
+	rows, err := dbOrTx.QueryContext(ctx, "select id, name, email, phone, level, created_at, updated_at from users where id= ?", id)
 	halpers.IfPanicError(err)
 	defer rows.Close()
 
@@ -67,7 +67,7 @@ func (u UserRepositoryImpl) FindById(ctx context.Context, dbOrTx QueryExecutor, 
 }
 
 func (u UserRepositoryImpl) FindByName(ctx context.Context, dbOrTx QueryExecutor, name string) (*domain.User, error) {
-	rows, err := dbOrTx.QueryContext(ctx, "select * from users where name=?", name)
+	rows, err := dbOrTx.QueryContext(ctx, "select id,name, email, phone, level, created_at, updated_at from users where name=?", name)
 	halpers.IfPanicError(err)
 	defer rows.Close()
 
@@ -82,13 +82,13 @@ func (u UserRepositoryImpl) FindByName(ctx context.Context, dbOrTx QueryExecutor
 }
 
 func (u UserRepositoryImpl) FindByEmail(ctx context.Context, dbOrTx QueryExecutor, email string) (*domain.User, error) {
-	rows, err := dbOrTx.QueryContext(ctx, "select * from users where email=?", email)
+	rows, err := dbOrTx.QueryContext(ctx, "select id, name, email, phone, password, level, created_at, updated_at from users where email=?", email)
 	halpers.IfPanicError(err)
 	defer rows.Close()
 
 	var user domain.User
 	if rows.Next() {
-		err = rows.Scan(&user.Id, &user.Name, &user.Email, &user.Phone, &user.Level, &user.CreatedAt, &user.UpdatedAt)
+		err = rows.Scan(&user.Id, &user.Name, &user.Email, &user.Phone, &user.Password, &user.Level, &user.CreatedAt, &user.UpdatedAt)
 		halpers.IfPanicError(err)
 		return &user, nil
 	} else {
@@ -97,14 +97,14 @@ func (u UserRepositoryImpl) FindByEmail(ctx context.Context, dbOrTx QueryExecuto
 }
 
 func (u UserRepositoryImpl) Save(ctx context.Context, tx *sql.Tx, user domain.User) domain.User {
-	result, err := tx.ExecContext(ctx, "insert into users (name, email, phone, level) values (?,?,?,?)", user.Name, user.Email, user.Phone, user.Level)
+	result, err := tx.ExecContext(ctx, "insert into users (name, email, password, phone, level) values (?,?,?,?,?)", user.Name, user.Email, user.Password, user.Phone, user.Level)
 	halpers.IfPanicError(err)
 
 	id, err := result.LastInsertId()
 	halpers.IfPanicError(err)
 
 	//	find by id
-	rows, err := tx.QueryContext(ctx, "select * from users where id=?", id)
+	rows, err := tx.QueryContext(ctx, "select id, name, email, phone, level, created_at, updated_at from users where id=?", id)
 	halpers.IfPanicError(err)
 	defer rows.Close()
 	if rows.Next() {
@@ -122,7 +122,7 @@ func (u UserRepositoryImpl) Update(ctx context.Context, tx *sql.Tx, user domain.
 	halpers.IfPanicError(err)
 
 	//	find by id
-	rows, err := tx.QueryContext(ctx, "select * from users where id=?", id)
+	rows, err := tx.QueryContext(ctx, "select  id, name, email, phone, level, created_at, updated_at from users where id=?", id)
 	halpers.IfPanicError(err)
 	defer rows.Close()
 	if rows.Next() {

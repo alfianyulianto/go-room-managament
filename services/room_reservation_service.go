@@ -13,4 +13,5 @@ type RoomReservationService interface {
 	Create(ctx context.Context, request request.RoomReservationCreateRequest) web.RoomReservationResponse
 	Update(ctx context.Context, request request.RoomReservationUpdateRequest) web.RoomReservationResponse
 	Delete(ctx context.Context, id int64)
+	//Accepted(ctx context.Context, roomReservation domain.RoomReservation)
 }

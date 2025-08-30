@@ -15,4 +15,6 @@ type RoomReservationRepository interface {
 	Save(ctx context.Context, tx *sql.Tx, roomReservation domain.RoomReservation) domain.RoomReservation
 	Update(ctx context.Context, tx *sql.Tx, roomReservation domain.RoomReservation) domain.RoomReservation
 	Delete(ctx context.Context, tx *sql.Tx, id int64)
+	Accepted(ctx context.Context, tx *sql.Tx, roomReservation domain.RoomReservation) domain.RoomReservation
+	Rejected(ctx context.Context, tx *sql.Tx, roomReservation domain.RoomReservation) domain.RoomReservation
 }
