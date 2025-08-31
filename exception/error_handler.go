@@ -15,6 +15,8 @@ func ErrorHandler(ctx *fiber.Ctx, err error) error {
 		return validatorErrors(ctx, err.(validator.ValidationErrors))
 	} else if _, ok = err.(*NotFoundError); ok {
 		return notFoundError(ctx, err.(*NotFoundError))
+	} else if _, ok = err.(*ConflictError); ok {
+		return conflictError(ctx, err.(*ConflictError))
 	} else {
 		return internalServerError(ctx, err)
 	}
@@ -26,6 +28,17 @@ func notFoundError(ctx *fiber.Ctx, err *NotFoundError) error {
 	webResponse := web.WebResponse{
 		Code:   http.StatusNotFound,
 		Status: http.StatusText(http.StatusNotFound),
+		Data:   err.Message,
+	}
+	return ctx.JSON(webResponse)
+}
+
+func conflictError(ctx *fiber.Ctx, err *ConflictError) error {
+	ctx.Status(http.StatusConflict)
+
+	webResponse := web.WebResponse{
+		Code:   http.StatusConflict,
+		Status: http.StatusText(http.StatusConflict),
 		Data:   err.Message,
 	}
 	return ctx.JSON(webResponse)

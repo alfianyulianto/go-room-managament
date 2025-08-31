@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/alfianyulianto/go-room-managament/config"
+	"github.com/alfianyulianto/go-room-managament/exception"
 	"github.com/alfianyulianto/go-room-managament/halpers"
 	"github.com/alfianyulianto/go-room-managament/model/domain"
 	"github.com/alfianyulianto/go-room-managament/model/request"
@@ -124,13 +125,15 @@ func NewRoomReservationServiceImpl(roomReservationRepository repositories.RoomRe
 			return false
 		}
 
-		id := fl.Parent().FieldByName("Id").Interface().(int64)
+		idField := fl.Parent().FieldByName("Id")
+		var id int64
+		if idField.IsValid() && !idField.IsZero() {
+			id = idField.Interface().(int64)
+		}
 
 		roomId := fl.Parent().FieldByName("RoomId").Interface().(int64)
 
 		overlap := roomReservationRepository.HasOverlap(context.Background(), DB, roomId, startStr, endStr)
-		fmt.Println(overlap.Id)
-		fmt.Println(id)
 
 		if overlap != nil {
 			if overlap.Id == id {
@@ -246,6 +249,16 @@ func (r RoomReservationServiceImpl) Create(ctx context.Context, request request.
 	halpers.IfPanicError(err)
 	defer halpers.CommitOrRollback(tx)
 
+	auth := ctx.Value("auth").(*domain.Auth)
+
+	status := "Pengajuan"
+	approveId := sql.NullInt64{Valid: false}
+
+	if auth.Level == "Admin" {
+		status = "Diterima"
+		approveId = sql.NullInt64{Int64: auth.Id, Valid: true}
+	}
+
 	err = r.Validate.Struct(request)
 	halpers.IfPanicError(err)
 
@@ -264,8 +277,8 @@ func (r RoomReservationServiceImpl) Create(ctx context.Context, request request.
 		StartAt:   startAt,
 		EndAt:     endAt,
 		Purpose:   request.Purpose,
-		Status:    "Pengajuan",
-		ApproveId: sql.NullInt64{Valid: false},
+		Status:    status,
+		ApproveId: approveId,
 		File:      filePath,
 	})
 
@@ -292,6 +305,14 @@ func (r RoomReservationServiceImpl) Update(ctx context.Context, request request.
 	err = r.Validate.Struct(request)
 	halpers.IfPanicError(err)
 
+	reservation, err := r.RoomReservationRepository.FindById(ctx, tx, request.Id)
+	halpers.IfPanicError(err)
+	fmt.Println(reservation)
+
+	if reservation.Status != "Pengajuan" {
+		panic(&exception.ConflictError{Message: "Reservation cannot be updated because status is not \"Pengajuan\""})
+	}
+
 	filePath, err := r.FileStorage.SaveFile(request.File, "room_reservations")
 	halpers.IfPanicError(err)
 
@@ -301,7 +322,7 @@ func (r RoomReservationServiceImpl) Update(ctx context.Context, request request.
 	endAt, err := time.Parse("2006-01-02 15:04:05", request.EndAt)
 	halpers.IfPanicError(err)
 
-	reservation := r.RoomReservationRepository.Update(ctx, tx, domain.RoomReservation{
+	reservation = r.RoomReservationRepository.Update(ctx, tx, domain.RoomReservation{
 		Id:      request.Id,
 		UserId:  request.UserId,
 		RoomId:  request.RoomId,
@@ -335,4 +356,161 @@ func (r RoomReservationServiceImpl) Delete(ctx context.Context, id int64) {
 	halpers.IfPanicError(err)
 
 	r.RoomReservationRepository.Delete(ctx, tx, id)
+}
+
+func (r RoomReservationServiceImpl) Accepted(ctx context.Context, id int64) web.RoomReservationResponse {
+	tx, err := r.DB.Begin()
+	halpers.IfPanicError(err)
+	defer halpers.CommitOrRollback(tx)
+
+	//check by id
+	reservation, err := r.RoomReservationRepository.FindById(ctx, tx, id)
+	halpers.IfPanicError(err)
+	fmt.Println(reservation)
+
+	if reservation.Status != "Pengajuan" {
+		panic(&exception.ConflictError{Message: "Reservation cannot be accepted because status is not \"Pengajuan\""})
+	}
+
+	auth := ctx.Value("auth").(*domain.Auth)
+
+	reservation = r.RoomReservationRepository.Accepted(ctx, tx, domain.RoomReservation{
+		Id:        id,
+		ApproveId: sql.NullInt64{Int64: auth.Id, Valid: true},
+	})
+
+	user, err := r.UserRepository.FindById(ctx, tx, reservation.UserId)
+	halpers.IfPanicError(err)
+
+	room, err := r.RoomRepository.FindById(ctx, tx, reservation.RoomId)
+	halpers.IfPanicError(err)
+
+	var approveResponse *web.UserResponse
+	if reservation.ApproveId.Valid {
+		approve, err := r.UserRepository.FindById(ctx, tx, reservation.ApproveId.Int64)
+		fmt.Println(reservation.ApproveId)
+		halpers.IfPanicError(err)
+
+		if approve != nil {
+			approveResponse = &web.UserResponse{
+				Id:        approve.Id,
+				Name:      approve.Name,
+				Email:     approve.Email,
+				Phone:     approve.Phone,
+				CreatedAt: approve.CreatedAt,
+				UpdatedAt: approve.UpdatedAt,
+			}
+		}
+	}
+
+	return web.RoomReservationResponse{
+		Id:        reservation.Id,
+		UserId:    reservation.UserId,
+		RoomId:    reservation.RoomId,
+		StarAt:    reservation.StartAt.Format("2006-01-02 15:04:05"),
+		EndAt:     reservation.EndAt.Format("2006-01-02 15:04:05"),
+		Purpose:   reservation.Purpose,
+		Status:    reservation.Status,
+		ApproveId: halpers.ConvertToInt64(reservation.ApproveId),
+		File:      path.Join(config.Cfg.BaseUrl, reservation.File),
+		CreatedAt: reservation.CreatedAt,
+		UpdatedAt: reservation.UpdatedAt,
+		User: &web.UserResponse{
+			Id:        user.Id,
+			Name:      user.Name,
+			Email:     user.Email,
+			Phone:     user.Phone,
+			CreatedAt: user.CreatedAt,
+			UpdatedAt: user.UpdatedAt,
+		},
+		Room: &web.RoomResponse{
+			Id:             room.Id,
+			RoomCategoryId: room.RoomCategoryId,
+			Code:           room.Code,
+			Name:           room.Name,
+			Condition:      room.Condition,
+			CreatedAt:      room.CreatedAt,
+			UpdatedAt:      room.UpdatedAt,
+		},
+		Approve: approveResponse,
+	}
+
+}
+
+func (r RoomReservationServiceImpl) Rejected(ctx context.Context, id int64) web.RoomReservationResponse {
+	tx, err := r.DB.Begin()
+	halpers.IfPanicError(err)
+	defer halpers.CommitOrRollback(tx)
+
+	//check by id
+	//check by id
+	reservation, err := r.RoomReservationRepository.FindById(ctx, tx, id)
+	halpers.IfPanicError(err)
+
+	if reservation.Status != "Pengajuan" {
+		panic(&exception.ConflictError{Message: "Reservation cannot be accepted because status is not \"Pengajuan\""})
+	}
+
+	auth := ctx.Value("auth").(*domain.Auth)
+
+	reservation = r.RoomReservationRepository.Rejected(ctx, tx, domain.RoomReservation{
+		Id:        id,
+		ApproveId: sql.NullInt64{Int64: auth.Id, Valid: true},
+	})
+
+	user, err := r.UserRepository.FindById(ctx, tx, reservation.UserId)
+	halpers.IfPanicError(err)
+
+	room, err := r.RoomRepository.FindById(ctx, tx, reservation.RoomId)
+	halpers.IfPanicError(err)
+
+	var approveResponse *web.UserResponse
+	if reservation.ApproveId.Valid {
+		approve, err := r.UserRepository.FindById(ctx, tx, reservation.ApproveId.Int64)
+		fmt.Println(reservation.ApproveId)
+		halpers.IfPanicError(err)
+
+		if approve != nil {
+			approveResponse = &web.UserResponse{
+				Id:        approve.Id,
+				Name:      approve.Name,
+				Email:     approve.Email,
+				Phone:     approve.Phone,
+				CreatedAt: approve.CreatedAt,
+				UpdatedAt: approve.UpdatedAt,
+			}
+		}
+	}
+
+	return web.RoomReservationResponse{
+		Id:        reservation.Id,
+		UserId:    reservation.UserId,
+		RoomId:    reservation.RoomId,
+		StarAt:    reservation.StartAt.Format("2006-01-02 15:04:05"),
+		EndAt:     reservation.EndAt.Format("2006-01-02 15:04:05"),
+		Purpose:   reservation.Purpose,
+		Status:    reservation.Status,
+		ApproveId: halpers.ConvertToInt64(reservation.ApproveId),
+		File:      path.Join(config.Cfg.BaseUrl, reservation.File),
+		CreatedAt: reservation.CreatedAt,
+		UpdatedAt: reservation.UpdatedAt,
+		User: &web.UserResponse{
+			Id:        user.Id,
+			Name:      user.Name,
+			Email:     user.Email,
+			Phone:     user.Phone,
+			CreatedAt: user.CreatedAt,
+			UpdatedAt: user.UpdatedAt,
+		},
+		Room: &web.RoomResponse{
+			Id:             room.Id,
+			RoomCategoryId: room.RoomCategoryId,
+			Code:           room.Code,
+			Name:           room.Name,
+			Condition:      room.Condition,
+			CreatedAt:      room.CreatedAt,
+			UpdatedAt:      room.UpdatedAt,
+		},
+		Approve: approveResponse,
+	}
 }

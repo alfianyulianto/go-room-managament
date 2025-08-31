@@ -74,7 +74,7 @@ func (r RoomReservationControllerImpl) Create(ctx *fiber.Ctx) error {
 	file, err := ctx.FormFile("file")
 	roomReservationCreateRequest.File = file
 
-	roomReservation := r.RoomReservationService.Create(ctx.Context(), roomReservationCreateRequest)
+	roomReservation := r.RoomReservationService.Create(ctx.UserContext(), roomReservationCreateRequest)
 	webResponse := web.WebResponse{
 		Code:   http.StatusOK,
 		Status: http.StatusText(http.StatusOK),
@@ -118,6 +118,34 @@ func (r RoomReservationControllerImpl) Delete(ctx *fiber.Ctx) error {
 		Code:   http.StatusOK,
 		Status: http.StatusText(http.StatusOK),
 		Data:   nil,
+	}
+	return ctx.JSON(webResponse)
+}
+
+func (r RoomReservationControllerImpl) Accepted(ctx *fiber.Ctx) error {
+	roomReservationId := ctx.Params("roomReservationId")
+	id, err := strconv.Atoi(roomReservationId)
+	halpers.IfPanicError(err)
+
+	roomReservation := r.RoomReservationService.Accepted(ctx.UserContext(), int64(id))
+	webResponse := web.WebResponse{
+		Code:   http.StatusOK,
+		Status: http.StatusText(http.StatusOK),
+		Data:   roomReservation,
+	}
+	return ctx.JSON(webResponse)
+}
+
+func (r RoomReservationControllerImpl) Rejected(ctx *fiber.Ctx) error {
+	roomReservationId := ctx.Params("roomReservationId")
+	id, err := strconv.Atoi(roomReservationId)
+	halpers.IfPanicError(err)
+
+	roomReservation := r.RoomReservationService.Rejected(ctx.UserContext(), int64(id))
+	webResponse := web.WebResponse{
+		Code:   http.StatusOK,
+		Status: http.StatusText(http.StatusOK),
+		Data:   roomReservation,
 	}
 	return ctx.JSON(webResponse)
 }

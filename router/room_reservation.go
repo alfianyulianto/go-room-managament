@@ -12,4 +12,6 @@ func RoomReservationRoute(router fiber.Router, controller controllers.RoomReserv
 	router.Post("/", controller.Create)
 	router.Put("/:roomReservationId", controller.Update)
 	router.Delete("/:roomReservationId", controller.Delete)
+	router.Post("/:roomReservationId/set-accepted", controller.Accepted)
+	router.Post("/:roomReservationId/set-rejected", controller.Rejected)
 }

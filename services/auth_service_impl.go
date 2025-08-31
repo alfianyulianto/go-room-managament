@@ -65,10 +65,13 @@ func (u AuthServiceImpl) Login(ctx context.Context, request request.LoginRequest
 	}
 
 	token, err := u.TokenUtil.CreateToken(domain.Auth{
-		Id: user.Id,
+		Id:    user.Id,
+		Name:  user.Name,
+		Email: user.Email,
+		Phone: user.Phone,
+		Level: user.Level,
 	})
 	halpers.IfPanicError(err)
-	fmt.Println(token)
 
 	return &web.TokenResponse{
 		Token: token,

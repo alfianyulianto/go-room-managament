@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"context"
 	"github.com/gofiber/fiber/v2"
 	"net/http"
 	"strings"
@@ -34,6 +35,8 @@ func NewAuth(tokenUtil *util.TokenUtil) fiber.Handler {
 		}
 
 		ctx.Locals("auth", auth)
+
+		ctx.SetUserContext(context.WithValue(ctx.UserContext(), "auth", auth))
 
 		return ctx.Next()
 

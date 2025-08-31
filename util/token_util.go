@@ -22,6 +22,10 @@ func (t TokenUtil) CreateToken(auth domain.Auth) (string, error) {
 	expire := time.Now().Add(time.Hour * 24).UnixMilli()
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 		"id":     auth.Id,
+		"name":   auth.Name,
+		"email":  auth.Email,
+		"phone":  auth.Phone,
+		"level":  auth.Level,
 		"expire": expire,
 	})
 
@@ -47,8 +51,16 @@ func (t TokenUtil) ParseToken(jwtToken string) (*domain.Auth, error) {
 	}
 
 	id := claims["id"].(float64)
+	name := claims["name"].(string)
+	email := claims["email"].(string)
+	phone := claims["phone"].(string)
+	level := claims["level"].(string)
 
 	return &domain.Auth{
-		Id: int64(id),
+		Id:    int64(id),
+		Name:  name,
+		Email: email,
+		Phone: phone,
+		Level: level,
 	}, nil
 }

@@ -8,4 +8,6 @@ type RoomReservationController interface {
 	Create(ctx *fiber.Ctx) error
 	Update(ctx *fiber.Ctx) error
 	Delete(ctx *fiber.Ctx) error
+	Accepted(ctx *fiber.Ctx) error
+	Rejected(ctx *fiber.Ctx) error
 }
